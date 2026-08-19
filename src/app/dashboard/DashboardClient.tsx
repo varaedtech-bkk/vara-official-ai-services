@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Lead } from '@/lib/leads';
 import type { VapiCall } from '@/app/api/vapi/calls/route';
@@ -48,12 +48,12 @@ function yellowChip(l: string){ return <Chip label={l} color="#854d0e" bg="#fef9
 function blueChip(l: string)  { return <Chip label={l} color="#1e40af" bg="#dbeafe" />; }
 function grayChip(l: string)  { return <Chip label={l} color="#374151" bg="#f3f4f6" />; }
 
-const REQ_CHIP: Record<string, JSX.Element> = {
+const REQ_CHIP: Record<string, ReactElement> = {
   proposal: redChip('proposal'), quote: <Chip label="quote" color="#92400e" bg="#fde68a" />,
   callback: blueChip('callback'), meeting: <Chip label="meeting" color="#5b21b6" bg="#ede9fe" />,
   information: greenChip('info'), other: grayChip('other'),
 };
-const CHAN_CHIP: Record<string, JSX.Element> = {
+const CHAN_CHIP: Record<string, ReactElement> = {
   email: blueChip('email'), phone: greenChip('phone'),
   whatsapp: <Chip label="whatsapp" color="#065f46" bg="#d1fae5" />,
   line: greenChip('line'), any: grayChip('any'),
@@ -86,6 +86,9 @@ function StatCard({ label, value, sub, accent }: { label: string; value: string 
 function CallRow({ call }: { call: VapiCall }) {
   const [open, setOpen] = useState(false);
   const sd = (call.analysis?.structuredData ?? {}) as Record<string, unknown>;
+  const visitorName = typeof sd.visitorName === 'string' ? sd.visitorName : '';
+  const organization = typeof sd.organization === 'string' ? sd.organization : '';
+  const audience = typeof sd.audience === 'string' ? sd.audience : '';
   const hasContent = !!(call.transcript || call.summary || call.analysis?.summary);
   const cb = call.costBreakdown as Record<string, number> | undefined;
 
@@ -121,13 +124,13 @@ function CallRow({ call }: { call: VapiCall }) {
           <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>
             {call.summary || call.analysis?.summary || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>No summary</span>}
           </div>
-          {sd.visitorName && (
+          {visitorName ? (
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-              <strong>{String(sd.visitorName)}</strong>
-              {sd.organization ? ` · ${String(sd.organization)}` : ''}
-              {sd.audience ? ` · ${String(sd.audience)}` : ''}
+              <strong>{visitorName}</strong>
+              {organization ? ` · ${organization}` : ''}
+              {audience ? ` · ${audience}` : ''}
             </div>
-          )}
+          ) : null}
           {Array.isArray(sd.servicesDiscussed) && sd.servicesDiscussed.length > 0 && (
             <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
               Topics: {(sd.servicesDiscussed as string[]).join(', ')}
