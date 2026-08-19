@@ -18,13 +18,8 @@ if [[ ! -f "$APP_DIR/package.json" ]]; then
   exit 1
 fi
 
-if [[ ! -x "$APP_DIR/node_modules/next/dist/bin/next" && ! -f "$APP_DIR/node_modules/next/dist/bin/next" ]]; then
-  echo "Next.js is not installed. In $APP_DIR run: npm ci && npm run build" >&2
-  exit 1
-fi
-
-if [[ ! -d "$APP_DIR/.next" ]]; then
-  echo "No production build. In $APP_DIR run: npm run build" >&2
+if [[ ! -f "$APP_DIR/.next/standalone/server.js" ]]; then
+  echo "Standalone server not found. In $APP_DIR run: yarn build" >&2
   exit 1
 fi
 

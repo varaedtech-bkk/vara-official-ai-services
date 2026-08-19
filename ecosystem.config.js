@@ -2,12 +2,10 @@
  * PM2 process definition for the VARA EdTech AI Assistant on a VPS.
  *
  * Assumes the repo is cloned at /root/vara-official-ai-services.
- * Build once, then:
+ * After `yarn build` (which prepares the standalone server):
  *
- *   cd /root/vara-official-ai-services
  *   bash deploy/pm2.sh
- *   pm2 save
- *   pm2 startup
+ *   pm2 save && pm2 startup
  *
  * Listens on 0.0.0.0:8080. Leads are stored in ./data (no LEADS_DIR).
  */
@@ -20,8 +18,7 @@ module.exports = {
     {
       name: 'vara-assistant',
       cwd: APP_DIR,
-      script: path.join(APP_DIR, 'node_modules/next/dist/bin/next'),
-      args: 'start -p 8080 -H 0.0.0.0',
+      script: path.join(APP_DIR, '.next/standalone/server.js'),
       interpreter: 'node',
 
       instances: 1,
