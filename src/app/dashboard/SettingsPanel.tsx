@@ -114,7 +114,7 @@ export default function SettingsPanel({ tenant: initial }: { tenant: TenantConfi
               <label>
                 <span className="dash-label">Assistant name</span>
                 <input className="dash-input" value={tenant.assistantName} onChange={(e) => patch('assistantName', e.target.value)} />
-                <div className="dash-hint">Spoken first, like Siri — Sara, Maya, Alex.</div>
+                <div className="dash-hint">Spoken first, like Siri — Sunny, Maya, Alex.</div>
               </label>
               <label>
                 <span className="dash-label">Company</span>

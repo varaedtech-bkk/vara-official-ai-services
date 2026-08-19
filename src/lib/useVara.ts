@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Lang } from './i18n';
+import {
+  TH_FIRST_MESSAGE,
+  TH_PRONUNCIATION_LOCK,
+  TH_SPOKEN_COMPANY,
+  TH_SPOKEN_SUNNY,
+  TH_VOICE_CHUNK_PLAN,
+} from './voice-pronunciation';
 
 /**
  * Voice session hook.
@@ -88,12 +95,25 @@ function errorText(err: unknown): string {
   const take = (value: unknown) => {
     if (typeof value === 'string' && value.trim()) parts.push(value);
   };
+  take(o.type);
+  take(o.stage);
   take(o.message);
   take(o.errorMsg);
   take(o.errorDetail);
   take(o.reason);
   if (typeof o.error === 'string') take(o.error);
-  else if (o.error && typeof o.error === 'object') parts.push(errorText(o.error));
+  else if (o.error && typeof o.error === 'object') {
+    const nested = errorText(o.error);
+    if (nested) parts.push(nested);
+  }
+  if (!parts.length) {
+    try {
+      const json = JSON.stringify(err, Object.getOwnPropertyNames(err as object));
+      if (json && json !== '{}') return json;
+    } catch {
+      /* ignore */
+    }
+  }
   return parts.join(' ');
 }
 
@@ -107,6 +127,41 @@ function isBenignHangup(err: unknown): boolean {
     text.includes('meeting-ended') ||
     text.includes('meeting ended')
   );
+}
+
+/** Drop TTS extras if Vapi rejects the Thai voice plan, so the call still connects. */
+async function startWithFallback(
+  vapi: VapiInstance,
+  assistantId: string,
+  overrides: Record<string, unknown>,
+  lang: Lang,
+): Promise<unknown> {
+  const tryStart = async (next: Record<string, unknown>) => {
+    const call = await vapi.start(assistantId, next);
+    if (call) return call;
+    throw new Error('voice session unavailable');
+  };
+
+  try {
+    return await tryStart(overrides);
+  } catch (err) {
+    if (lang !== 'th' || isBenignHangup(err)) throw err;
+    console.warn('[vara] start with TTS plan failed, retrying simpler Thai session', err);
+  }
+
+  const voice = overrides.voice as Record<string, unknown> | undefined;
+  if (voice && 'chunkPlan' in voice) {
+    const { chunkPlan: _chunkPlan, ...voiceRest } = voice;
+    try {
+      return await tryStart({ ...overrides, voice: voiceRest });
+    } catch (err) {
+      if (isBenignHangup(err)) throw err;
+      console.warn('[vara] start with Thai voice override failed, retrying assistant defaults', err);
+    }
+  }
+
+  const { transcriber: _t, voice: _v, ...base } = overrides;
+  return tryStart(base);
 }
 
 function parseToolArgs(raw: unknown): Record<string, unknown> {
@@ -161,6 +216,9 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
   const callIdRef = useRef<string | undefined>(undefined);
   const langRef = useRef(lang);
   langRef.current = lang;
+  // Bumped on stop/start so an in-flight start (mic prompt) cannot connect
+  // the previous language after the visitor taps TH/EN.
+  const sessionGenRef = useRef(0);
   const slugRef = useRef(opts?.slug);
   slugRef.current = opts?.slug;
 
@@ -183,7 +241,7 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
           setConfig({
             publicKey: null,
             assistants: { en: null, th: null },
-            textChatEnabled: false,
+            textChatEnabled: true,
             configured: false,
           });
         }
@@ -301,6 +359,7 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
   /* --------------------------------------------------------------- stop */
 
   const stop = useCallback(() => {
+    sessionGenRef.current += 1;
     activeRef.current = false;
     try {
       vapiRef.current?.stop();
@@ -373,13 +432,21 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
         return;
       }
 
-      console.error('[vara] session error', err);
+      const detail = errorText(err);
+      // Daily often emits a payload that serialises to {}. Treat that as
+      // teardown noise, not a failed connection — console.error would open
+      // the Next.js overlay in dev.
+      if (!detail) {
+        console.warn('[vara] ignored empty session error');
+        return;
+      }
+
+      console.warn('[vara] session error', detail);
       // The instance is now built ahead of the click, so it can emit while
       // nobody is in a call. Don't surface an error banner on an idle page.
       if (!activeRef.current) return;
       activeRef.current = false;
       stopMeter();
-      const detail = errorText(err) || undefined;
       setError({ kind: 'connection', detail });
       setStatus('error');
     });
@@ -403,7 +470,7 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
         return;
       }
 
-      // Surface a confirmation when Sara saves someone's details, and mirror
+      // Surface a confirmation when Sunny saves someone's details, and mirror
       // the capture to our API so localhost still stores the lead + sends email
       // even when Vapi cannot reach our webhook.
       const names: string[] = [];
@@ -474,8 +541,9 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
 
     if (!config) return;
 
-    const assistantId = config.assistants[lang];
-    if (!config.publicKey || !assistantId) {
+    const gen = ++sessionGenRef.current;
+
+    if (!config.publicKey) {
       setError({ kind: 'not-configured' });
       setStatus('error');
       return;
@@ -490,10 +558,23 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
       });
+      if (gen !== sessionGenRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       micStreamRef.current = stream;
       startMeter(stream);
     } catch {
       setError({ kind: 'mic-denied' });
+      setStatus('error');
+      return;
+    }
+
+    const liveLang = langRef.current;
+    const assistantId = config.assistants[liveLang];
+    if (!assistantId) {
+      stopMeter();
+      setError({ kind: 'not-configured' });
       setStatus('error');
       return;
     }
@@ -505,6 +586,7 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
       // Almost always already built by the prewarm effect above.
       const vapi = await ensureVapi();
       if (!vapi) throw new Error('voice session unavailable');
+      if (gen !== sessionGenRef.current) return;
 
       // Drop a leftover Daily room so `start()` is not a no-op after hang-up
       // (`this.started` stays true until stop/cleanup).
@@ -514,21 +596,73 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
         /* nothing to tear down */
       }
 
+      if (gen !== sessionGenRef.current) return;
+
       activeRef.current = true;
       const tenant = config.tenant;
-      const overrides = tenant
-        ? {
-            firstMessage: `Hi, this is ${tenant.assistantName} from ${tenant.companyName}. How may I help you?`,
-            variableValues: {
-              assistantName: tenant.assistantName,
-              companyName: tenant.companyName,
-              clientSkills: tenant.clientSkills,
-              extraInstructions: tenant.extraInstructions,
-            },
-            metadata: { tenantSlug: tenant.slug },
-          }
-        : undefined;
-      const call = await vapi.start(assistantId, overrides);
+      const name = tenant?.assistantName || 'Sunny';
+      const company = tenant?.companyName || 'VARA EdTech';
+      const languageLock =
+        liveLang === 'th'
+          ? [
+              'This live call is Thai-only. Speak Thai with ครับ. Never reply in English.',
+              TH_PRONUNCIATION_LOCK,
+            ].join('\n')
+          : [
+              'This live call is English-only. Do not speak Thai.',
+              'Say the company as Vah-rah Ed Tech, two clear words. Never voritec.',
+              'Say the founder as SUN-jay KOO-mar. Never Sanjiya.',
+            ].join(' ');
+      const pipeline =
+        liveLang === 'th'
+          ? {
+              transcriber: {
+                provider: 'azure',
+                language: 'th-TH',
+                segmentationStrategy: 'Semantic',
+              },
+              voice: {
+                provider: 'azure',
+                voiceId: 'th-TH-NiwatNeural',
+                speed: 0.8,
+                chunkPlan: TH_VOICE_CHUNK_PLAN,
+              },
+            }
+          : {
+              transcriber: {
+                provider: 'deepgram',
+                model: 'nova-3',
+                language: 'en',
+                smartFormat: true,
+              },
+              voice: {
+                provider: 'vapi',
+                voiceId: 'Elliot',
+                version: 2,
+                speed: 0.96,
+              },
+            };
+      const overrides = {
+        firstMessageMode: 'assistant-speaks-first',
+        firstMessage:
+          liveLang === 'th'
+            ? TH_FIRST_MESSAGE
+            : `Hi, this is ${name} from ${company}. How may I help you?`,
+        ...pipeline,
+        variableValues: {
+          assistantName: liveLang === 'th' ? TH_SPOKEN_SUNNY : name,
+          companyName: liveLang === 'th' ? TH_SPOKEN_COMPANY : company,
+          clientSkills: tenant?.clientSkills || '',
+          extraInstructions: [languageLock, tenant?.extraInstructions]
+            .filter(Boolean)
+            .join('\n'),
+        },
+        metadata: {
+          language: liveLang,
+          ...(tenant ? { tenantSlug: tenant.slug } : {}),
+        },
+      };
+      const call = await startWithFallback(vapi, assistantId, overrides, liveLang);
       if (!call && activeRef.current) {
         throw new Error('voice session unavailable');
       }
@@ -547,7 +681,7 @@ export function useVara(lang: Lang, opts?: { slug?: string }) {
       setStatus('error');
     }
 
-  }, [config, lang, ensureVapi, startMeter, stopMeter]);
+  }, [config, ensureVapi, startMeter, stopMeter]);
 
   /* --------------------------------------------------------------- mute */
 

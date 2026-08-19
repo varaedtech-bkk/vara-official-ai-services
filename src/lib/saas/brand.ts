@@ -10,7 +10,7 @@ export function clientSkillsBlock(tenant: Tenant): string {
 
 export function voiceVariableValues(tenant: Tenant) {
   return {
-    assistantName: tenant.assistantName || 'Sara',
+    assistantName: tenant.assistantName || 'Sunny',
     companyName: tenant.companyName || 'VARA EdTech',
     clientSkills: clientSkillsBlock(tenant) || 'Use the platform knowledge you already have.',
     extraInstructions: tenant.extraInstructions?.trim() || '',
@@ -18,10 +18,10 @@ export function voiceVariableValues(tenant: Tenant) {
 }
 
 export function voiceFirstMessage(tenant: Tenant, lang: 'en' | 'th' = 'en'): string {
-  const name = tenant.assistantName || 'Sara';
+  const name = tenant.assistantName || 'Sunny';
   const company = tenant.companyName || 'VARA EdTech';
   if (lang === 'th') {
-    return `สวัสดีค่ะ ดิฉัน${name} จาก ${company} ค่ะ ให้ดิฉันช่วยอะไรดีคะ`;
+    return `สวัสดีครับ ผม${name} จาก ${company} ครับ ให้ผมช่วยอะไรได้บ้างครับ`;
   }
   return `Hi, this is ${name} from ${company}. How may I help you?`;
 }

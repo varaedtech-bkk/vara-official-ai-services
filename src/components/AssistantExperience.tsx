@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getCopy } from '@/lib/i18n';
+import { getCopy, type Lang } from '@/lib/i18n';
 import { useVara } from '@/lib/useVara';
 import FluidOrb from './FluidOrb';
+import TextChat from './TextChat';
 
 type Theme = 'dark' | 'light';
 
@@ -52,23 +53,31 @@ const ORB_CENTER_Y = '44dvh';
  * The orb canvas is full-bleed and pointer-transparent so the wave can run off
  * both edges of the screen; the click target is a circular button laid over it.
  *
- * English only for now — the Thai assistant, system prompt and knowledge layer
- * are all still in the repo, so restoring the toggle is a small change.
+ * English and Thai each have their own voice assistant. The EN / TH control
+ * in the header starts the matching one. Switching language ends a live call.
  */
 export default function AssistantExperience({ slug = 'vara' }: { slug?: string }) {
-  const copy = getCopy('en');
+  const [lang, setLang] = useState<Lang>('en');
+  const copy = getCopy(lang);
   const [theme, setTheme] = useState<Theme>('dark');
 
   const c = THEMES[theme];
 
-  const vara = useVara('en', { slug });
+  const vara = useVara(lang, { slug });
   const { status, isActive, audio, turns, error, muted, leadCaptured } = vara;
+  const [chatOpen, setChatOpen] = useState(false);
 
   /* Read back whatever the inline script in <head> already applied, so the
      toggle starts in agreement with what was painted. */
   useEffect(() => {
     const current = (document.documentElement.getAttribute('data-theme') as Theme) || 'dark';
     setTheme(current);
+    try {
+      const stored = localStorage.getItem('vara-lang');
+      if (stored === 'en' || stored === 'th') setLang(stored);
+    } catch {
+      /* private mode */
+    }
   }, []);
 
   /* Paint the document surfaces directly — inline styles on <body> always win
@@ -77,9 +86,10 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
     const t = THEMES[theme];
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.colorScheme = theme;
+    document.documentElement.lang = copy.htmlLang;
     document.body.style.backgroundColor = t.bg;
     document.body.style.color = t.fg;
-  }, [theme]);
+  }, [theme, copy.htmlLang]);
 
   function toggleTheme() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
@@ -89,6 +99,28 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
     } catch {
       /* private mode — the choice just won't persist */
     }
+  }
+
+  function switchLang(next: Lang) {
+    if (next === lang) return;
+    if (vara.isActive) vara.stop();
+    vara.reset();
+    setLang(next);
+    try {
+      localStorage.setItem('vara-lang', next);
+    } catch {
+      /* private mode */
+    }
+  }
+
+  function openChat() {
+    if (vara.isActive) vara.stop();
+    vara.reset();
+    setChatOpen(true);
+  }
+
+  function closeChat() {
+    setChatOpen(false);
   }
 
   const statusLabel = {
@@ -117,7 +149,13 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
 
   const notConfigured = vara.config !== null && !vara.config.configured;
   const blocked = error?.kind === 'mic-denied' || error?.kind === 'not-configured' || notConfigured;
-  const chrome = isActive ? 'opacity-40 hover:opacity-100' : 'opacity-100';
+  const website = vara.config?.tenant?.website || 'https://varaedtech.com';
+  let visitHost = 'varaedtech.com';
+  try {
+    visitHost = new URL(website).hostname.replace(/^www\./, '');
+  } catch {
+    /* keep default */
+  }
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden">
@@ -139,14 +177,15 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
 
       {/* ------------------------------------------------------------ chrome */}
       <header
-        className={`absolute inset-x-0 top-0 z-20 flex items-center justify-between
-                    px-6 py-5 transition-opacity duration-700 sm:px-10 sm:py-7 ${chrome}`}
+        className="absolute inset-x-0 top-0 z-40 flex items-center justify-between gap-3
+                    px-4 py-4 sm:px-8 sm:py-5"
       >
         <a
-          href={vara.config?.tenant?.website || 'https://varaedtech.com'}
+          href={website}
           target="_blank"
           rel="noreferrer noopener"
           aria-label={vara.config?.tenant?.companyName || 'VARA EdTech'}
+          className="flex h-9 shrink-0 items-center"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -156,16 +195,64 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
           />
         </a>
 
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="icon-btn"
-          style={{ color: c.fgDim }}
-          aria-label={theme === 'dark' ? 'Switch to light background' : 'Switch to dark background'}
-          title={theme === 'dark' ? 'Light background' : 'Dark background'}
+        <nav
+          className="flex h-9 shrink-0 items-center gap-1.5 sm:gap-2"
+          aria-label="Site"
         >
-          {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-        </button>
+          <a
+            href={website}
+            target="_blank"
+            rel="noreferrer noopener"
+            title={copy.footerVisit}
+            className="inline-flex h-9 max-w-[min(42vw,11rem)] items-center rounded-full px-2.5
+                       text-[11px] font-semibold tracking-wide sm:max-w-none sm:px-3 sm:text-[12px]"
+            style={{
+              color: c.fgDim,
+              border: `1px solid ${c.border}`,
+            }}
+          >
+            <span className="truncate sm:hidden">{copy.footerVisitShort}</span>
+            <span className="hidden sm:inline">
+              {lang === 'th' ? `เยี่ยมชม ${visitHost}` : `Visit ${visitHost}`}
+            </span>
+            <span className="ml-1 shrink-0 opacity-70" aria-hidden>
+              ↗
+            </span>
+          </a>
+          <div
+            role="group"
+            aria-label={copy.langLabel}
+            className="flex h-9 overflow-hidden rounded-full text-[11px] font-semibold tracking-[0.14em]"
+            style={{ border: `1px solid ${c.border}` }}
+          >
+            {(['en', 'th'] as const).map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => switchLang(code)}
+                className="h-9 px-2.5 uppercase transition-colors duration-200 sm:px-3"
+                style={{
+                  color: lang === code ? c.fg : c.fgDim,
+                  background: lang === code ? c.surface : 'transparent',
+                }}
+                aria-pressed={lang === code}
+                title={copy.switchNote}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="icon-btn"
+            style={{ color: c.fgDim }}
+            aria-label={theme === 'dark' ? 'Switch to light background' : 'Switch to dark background'}
+            title={theme === 'dark' ? 'Light background' : 'Dark background'}
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
+        </nav>
       </header>
 
       {/* ------------------------------------------------------------- stage */}
@@ -176,7 +263,9 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
         text flows after the button and can never land on top of it.
       */}
       <div
-        className="absolute inset-x-0 z-10 flex flex-col items-center px-6"
+        className={`absolute inset-x-0 z-10 flex flex-col items-center px-6 pb-8 ${
+          chatOpen ? 'pointer-events-none opacity-0' : ''
+        }`}
         style={{ top: `calc(${ORB_CENTER_Y} - ${ORB_R})` }}
       >
         <button
@@ -228,6 +317,37 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
         >
           {copy.tapToSpeak}
         </p>
+
+        {!isActive && (
+          <button
+            type="button"
+            onClick={openChat}
+            className="mt-8 w-full max-w-[22rem] rounded-2xl px-5 py-3.5 text-left
+                       transition-transform duration-200 hover:scale-[1.02] active:scale-[0.99]"
+            style={{
+              color: c.fg,
+              background: c.surface,
+              border: `1px solid ${c.border}`,
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="grid h-10 w-10 flex-none place-items-center rounded-full"
+                style={{ background: 'rgba(232,64,47,0.16)', color: '#e8402f' }}
+                aria-hidden
+              >
+                <ChatMini />
+              </span>
+              <span>
+                <span className="block text-[15px] font-semibold tracking-tight">{copy.typeInstead}</span>
+                <span className="mt-0.5 block text-[12px] leading-snug" style={{ color: c.fgDim }}>
+                  {copy.typeInsteadHint}
+                </span>
+              </span>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* --------------------------------------------------------- captions */}
@@ -302,7 +422,7 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
       )}
 
       {/* ---------------------------------------------------------- alerts */}
-      {(blocked || error?.kind === 'connection') && (
+      {(blocked || error?.kind === 'connection') && !chatOpen && (
         <div
           role="alert"
           className="absolute inset-x-0 bottom-28 z-30 mx-auto w-fit max-w-md animate-fade-up
@@ -327,7 +447,22 @@ export default function AssistantExperience({ slug = 'vara' }: { slug?: string }
                 ? copy.connectionErrorHelp
                 : copy.notConfiguredHelp}
           </p>
+          {error?.kind === 'connection' && error.detail ? (
+            <p className="mt-2 break-words text-[11px] leading-relaxed" style={{ color: c.fgFaint }}>
+              {error.detail}
+            </p>
+          ) : null}
         </div>
+      )}
+
+      {chatOpen && (
+        <TextChat
+          key={lang}
+          lang={lang}
+          copy={copy}
+          colors={{ fg: c.fg, fgDim: c.fgDim, fgFaint: c.fgFaint, surface: c.surface, border: c.border }}
+          onClose={closeChat}
+        />
       )}
     </div>
   );
@@ -390,6 +525,14 @@ function MoonIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" {...strokeProps}>
       <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+    </svg>
+  );
+}
+
+function ChatMini() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" {...strokeProps}>
+      <path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 1 1 18 0Z" />
     </svg>
   );
 }

@@ -120,4 +120,4 @@ Complete workshop content and materials · qualified facilitators · hands-on ex
 - Internal maturity scores are not third-party certifications.
 - Controller/processor roles and student/minor data need legal review on both sides.
 - A dedicated University MoU template and an enterprise DPA / subprocessors pack are prepared per engagement rather than off the shelf.
-- White-label campus branding for the TutExperts Campus LMS, parent portals, full SIS replacement and net-30 invoicing are not current product claims.
+- White-label campus branding for the TutExperts Campus LMS, parent portals, full SIS replacement and net-30 invoicing are not current product claims. TutExperts coverage starts with a soft roster around 50 learners; Roster Pro and Campus LMS add roster and assignment tools, still TutExperts-branded.

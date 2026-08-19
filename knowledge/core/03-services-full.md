@@ -1,7 +1,7 @@
 ---
 id: services-full
 title: Full service catalogue beyond AI — VR/AR, web, mobile, cloud, 3D
-tags: [services, vr, ar, virtual reality, augmented reality, education, real estate, telemedicine, healthcare, ecommerce, cloud, mobile, apps, web, 3d, configurator, fintech, iot, expertise]
+tags: [services, vr, ar, virtual reality, augmented reality, education, real estate, telemedicine, healthcare, ecommerce, cloud, mobile, apps, web, saas, website, 3d, configurator, fintech, iot, expertise]
 ---
 
 # Full service catalogue
@@ -9,7 +9,9 @@ tags: [services, vr, ar, virtual reality, augmented reality, education, real est
 VARA's expertise spans AI, immersive technology, software and cloud. The AI practice is described separately; this document covers everything else.
 
 ## Expertise areas
-AI solutions (AEO, chatbots, intelligent automation) · Voice AI (voice assistants, speech recognition) · Machine learning (custom ML models, data analytics) · VR/AR apps · Educational training in virtual environments · Healthcare apps · Virtual real estate · Web development · Mobile apps · 3D configurators · Fintech solutions · Cloud services · IoT · E-commerce.
+AI solutions (AEO, chatbots, intelligent automation) · Voice AI · Machine learning · VR/AR · Educational training in virtual environments · Healthcare apps · Virtual real estate · Websites and web applications · Mobile apps (iOS and Android) · E-commerce stores and apps · SaaS / subscription products · 3D configurators · Fintech · Cloud · IoT.
+
+The group is a **full software house**, not only an AI trainer. If someone asks "can you build an app / a website / an online store / a SaaS product?", the answer is yes — scoped after a free evaluation, then built and supported.
 
 ---
 
@@ -51,14 +53,44 @@ Expert cloud computing consulting to improve productivity, scalability and secur
 ---
 
 ## Mobile Apps
-Full-service app development and distribution for iOS and Android with ongoing support.
+Full-service native and cross-platform apps for **iOS and Android**, from first design through store listing and updates.
 
-**Includes:** cross-platform development · app store optimisation · performance monitoring.
+**Typical builds:** customer apps, staff/internal tools, booking and learning apps, e-commerce apps, campus or event apps.
+
+**Includes:** product design · iOS and Android delivery · API backends · push notifications · app-store submission · performance monitoring · ongoing versions.
+
+**Honest limit:** store review times and Apple/Google policies are outside VARA's control. Timelines are given after discovery.
 
 ---
 
-## Web Development
-Custom websites and web applications — including sites engineered for both traditional and AI-powered search (see AEO in the AI services document).
+## Websites and web applications
+Marketing sites, content sites, and logged-in web apps — including sites engineered for both Google and AI answer engines (see AEO).
+
+**Typical builds:** company and university sites, landing pages, client portals, admin dashboards, booking systems, custom CMS.
+
+**Includes:** responsive design · CMS where useful · technical SEO / AEO-ready markup · forms and lead capture · hosting guidance · handover and training.
+
+**Timeline:** straightforward marketing sites often 2–4 weeks; larger portals are scoped.
+
+---
+
+## E-commerce
+Online stores and shopping apps so a business can sell on the web and on phones.
+
+**Includes:** catalogues and search · carts and checkout · payments (wired to the client's chosen provider) · orders and inventory hooks · promotions · optional AR "see it before you buy" (see AR E-commerce).
+
+Can be a new store or an upgrade of what they already run. Do not invent a preferred payment brand unless the client names one.
+
+---
+
+## SaaS and multi-user products
+The group builds **SaaS-style products**: multi-user platforms with roles, dashboards, subscriptions and ongoing hosting — the same shape as products already shipped, including **TutExperts** (VARA's live tutoring marketplace at tutexperts.com), RedLine, and private AI portals.
+
+**Typical builds:** B2B tools, internal platforms spun out as products, subscription learning or ops software, white-label admin + customer apps.
+
+**Includes:** user accounts and roles · web and/or mobile clients · APIs · admin consoles · usage or seat plans · handoff so the client owns the product.
+
+**Honest limit:** a full SaaS is a product, not a brochure site. Scope, data model and who hosts it are agreed in discovery. Do not promise a live marketplace or Stripe billing unless that is in the brief.
 
 ---
 

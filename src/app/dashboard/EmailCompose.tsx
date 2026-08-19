@@ -171,7 +171,7 @@ export function EmailCompose({
                 <div>
                   <strong>{fromLabel}</strong>
                   <span>
-                    From {assistantName || 'Sara'}
+                    From {assistantName || 'Sunny'}
                     {site ? ` · ${site}` : ''}
                   </span>
                 </div>

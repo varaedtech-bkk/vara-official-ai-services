@@ -410,7 +410,7 @@ function TranscriptBlock({ text }: { text: string }) {
             borderBottom: i < lines.length - 1 ? '1px solid #f3f4f6' : 'none',
             fontSize: 13, color: '#374151', lineHeight: 1.5,
           }}>
-            {isAI && <span style={{ fontWeight: 600, color: '#0369a1', marginRight: 6 }}>Sara</span>}
+            {isAI && <span style={{ fontWeight: 600, color: '#0369a1', marginRight: 6 }}>Sunny</span>}
             {isUser && <span style={{ fontWeight: 600, color: '#7c3aed', marginRight: 6 }}>Visitor</span>}
             {isAI ? line.replace(/^AI:\s*|^Assistant:\s*/, '') : isUser ? line.replace(/^User:\s*/, '') : line}
           </div>
@@ -433,7 +433,7 @@ const TITLES: Record<Tab, { title: string; sub: string }> = {
   leads: { title: 'Leads', sub: 'People who asked to be contacted.' },
   emails: { title: 'Follow-up', sub: 'Review the call, write the client letter, send from this workspace.' },
   settings: { title: 'Workspace', sub: 'Assistant name, logo, skills and SMTP.' },
-  tenants: { title: 'Clients', sub: 'Manual subscriptions and paid admin logins.' },
+  tenants: { title: 'Clients', sub: 'Workspaces, live-agent alert emails, and paid admin logins.' },
 };
 
 /* ============================================================ main */

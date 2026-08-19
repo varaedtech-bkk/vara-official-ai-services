@@ -78,6 +78,82 @@ function getTransporter(smtp?: { host: string; port: number; user: string; pass:
   });
 }
 
+export async function sendStaffAlert(opts: {
+  to: string[];
+  subject: string;
+  text: string;
+  leadId: string;
+  requestType?: string;
+  visitorKey?: string;
+}): Promise<void> {
+  const recipients = [...new Set(opts.to.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  if (!recipients.length) return;
+
+  const transporter = getTransporter();
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+  const replyTo = process.env.EMAIL_REPLY_TO || from;
+  const visitorKey = opts.visitorKey;
+
+  if (!transporter || !from) {
+    console.warn('[email] SMTP not configured — skipping staff alert', opts.leadId);
+    for (const to of recipients) {
+      writeLog({
+        id: `${opts.leadId}-${Date.now()}`,
+        sentAt: new Date().toISOString(),
+        status: 'skipped',
+        leadId: opts.leadId,
+        to,
+        subject: opts.subject,
+        error: 'SMTP not configured',
+        requestType: opts.requestType,
+        leadName: visitorKey,
+      });
+    }
+    return;
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from,
+      replyTo,
+      to: recipients.join(', '),
+      subject: opts.subject,
+      text: opts.text,
+      html: textToHtml(opts.text),
+    });
+    console.log(`[email] staff alert to ${recipients.join(', ')} msgId=${info.messageId}`);
+    for (const to of recipients) {
+      writeLog({
+        id: `${opts.leadId}-${Date.now()}`,
+        sentAt: new Date().toISOString(),
+        status: 'sent',
+        leadId: opts.leadId,
+        to,
+        subject: opts.subject,
+        messageId: info.messageId,
+        requestType: opts.requestType,
+        leadName: visitorKey,
+      });
+    }
+  } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    console.error('[email] staff alert failed', err);
+    for (const to of recipients) {
+      writeLog({
+        id: `${opts.leadId}-${Date.now()}`,
+        sentAt: new Date().toISOString(),
+        status: 'failed',
+        leadId: opts.leadId,
+        to,
+        subject: opts.subject,
+        error,
+        requestType: opts.requestType,
+        leadName: visitorKey,
+      });
+    }
+  }
+}
+
 export async function sendFollowUpEmail(
   lead: Lead,
   opts?: { force?: boolean; subject?: string; text?: string; html?: string },

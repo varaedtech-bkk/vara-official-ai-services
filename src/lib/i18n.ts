@@ -43,9 +43,13 @@ export type Copy = {
   captionsOff: string;
 
   typeInstead: string;
+  typeInsteadHint: string;
   typePlaceholder: string;
   send: string;
   chatIntro: string;
+  backToVoice: string;
+  backToVoiceHint: string;
+  chatTyping: string;
 
   leadTitle: string;
   leadSubtitle: string;
@@ -74,6 +78,8 @@ export type Copy = {
 
   footerTagline: string;
   footerRights: string;
+  footerVisit: string;
+  footerVisitShort: string;
   privacyNote: string;
 
   langLabel: string;
@@ -84,7 +90,7 @@ const en: Copy = {
   htmlLang: 'en',
   eyebrow: 'VARA EdTech · Live AI Assistant',
   headline: 'Talk to',
-  headlineAccent: 'Sara',
+  headlineAccent: 'Sunny',
   subhead:
     "Our AI assistant knows everything about VARA EdTech — our AI services, our VR and AR work, and how we partner with universities. Ask anything, out loud, right now.",
 
@@ -96,7 +102,7 @@ const en: Copy = {
   statusIdle: 'Ready when you are',
   statusConnecting: 'Connecting',
   statusListening: 'Listening',
-  statusSpeaking: 'Sara is speaking',
+  statusSpeaking: 'Sunny is speaking',
   statusThinking: 'Thinking',
   statusEnded: 'Conversation ended',
 
@@ -115,7 +121,7 @@ const en: Copy = {
   transcriptTitle: 'Live transcript',
   transcriptEmpty: 'The conversation will appear here as you speak.',
   you: 'You',
-  assistant: 'Sara',
+  assistant: 'Sunny',
 
   tapToSpeak: 'Tap the sphere to speak',
 
@@ -124,15 +130,19 @@ const en: Copy = {
   captionsOn: 'Hide transcript',
   captionsOff: 'Show transcript',
 
-  typeInstead: 'Prefer to type?',
-  typePlaceholder: 'Ask Sara anything about VARA EdTech…',
+  typeInstead: 'Type a message',
+  typeInsteadHint: 'Chat with Sunny if you’d rather not use the mic',
+  typePlaceholder: 'Message Sunny…',
   send: 'Send',
   chatIntro:
-    "Hi, I'm Sara. Ask me anything about VARA EdTech — services, projects, university partnerships or pricing.",
+    "Hi, I'm Sunny. Ask me anything about VARA EdTech — services, projects, university partnerships or pricing.",
+  backToVoice: 'Talk with Sunny',
+  backToVoiceHint: 'Switch back to voice',
+  chatTyping: 'Sunny is typing…',
 
   leadTitle: 'Ask us to get in touch',
   leadSubtitle:
-    'Leave your details and the team will contact you within 24 hours. Sara can also take these for you during the conversation.',
+    'Leave your details and the team will contact you within 24 hours. Sunny can also take these for you during the conversation.',
   leadName: 'Your name',
   leadOrg: 'University / organisation',
   leadEmail: 'Email',
@@ -145,9 +155,9 @@ const en: Copy = {
   leadError: 'Something went wrong. Please email info@varaedtech.com or call +66 94 887 7955.',
   leadRequired: 'Please add your name and either an email or a phone number.',
 
-  leadCapturedToast: 'Sara saved your details for the team',
+  leadCapturedToast: 'Sunny saved your details for the team',
 
-  capabilitiesTitle: 'What Sara can talk about',
+  capabilitiesTitle: 'What Sunny can talk about',
   capabilities: [
     {
       title: 'Our AI services',
@@ -179,6 +189,8 @@ const en: Copy = {
 
   footerTagline: 'Revolutionizing learning',
   footerRights: 'VARA EdTech Co., Ltd. All rights reserved.',
+  footerVisit: 'Visit varaedtech.com',
+  footerVisitShort: 'Visit site',
   privacyNote:
     'Conversations may be recorded so the team can follow up accurately. Please do not share passwords or payment details.',
 
@@ -190,7 +202,7 @@ const th: Copy = {
   htmlLang: 'th',
   eyebrow: 'VARA EdTech · ผู้ช่วย AI สนทนาสด',
   headline: 'คุยกับ',
-  headlineAccent: 'ซาร่า',
+  headlineAccent: 'Sunny',
   subhead:
     'ผู้ช่วย AI ของเรารู้ทุกเรื่องเกี่ยวกับ VARA EdTech ทั้งบริการด้าน AI งาน VR และ AR รวมถึงความร่วมมือกับมหาวิทยาลัย ถามได้เลยด้วยเสียง ตอนนี้',
 
@@ -202,7 +214,7 @@ const th: Copy = {
   statusIdle: 'พร้อมแล้วครับ',
   statusConnecting: 'กำลังเชื่อมต่อ',
   statusListening: 'กำลังฟัง',
-  statusSpeaking: 'ซาร่ากำลังพูด',
+  statusSpeaking: 'Sunny กำลังพูด',
   statusThinking: 'กำลังคิด',
   statusEnded: 'จบการสนทนาแล้ว',
 
@@ -220,7 +232,7 @@ const th: Copy = {
   transcriptTitle: 'บทสนทนาสด',
   transcriptEmpty: 'บทสนทนาจะปรากฏที่นี่เมื่อเริ่มพูด',
   you: 'คุณ',
-  assistant: 'ซาร่า',
+  assistant: 'Sunny',
 
   tapToSpeak: 'แตะทรงกลมเพื่อเริ่มพูด',
 
@@ -229,15 +241,19 @@ const th: Copy = {
   captionsOn: 'ซ่อนบทสนทนา',
   captionsOff: 'แสดงบทสนทนา',
 
-  typeInstead: 'อยากพิมพ์แทนไหมครับ',
-  typePlaceholder: 'ถามซาร่าเรื่อง VARA EdTech ได้เลยค่ะ…',
+  typeInstead: 'พิมพ์ข้อความ',
+  typeInsteadHint: 'คุยกับ Sunny ผ่านแชท ถ้าไม่สะดวกใช้ไมโครโฟน',
+  typePlaceholder: 'พิมพ์ถึง Sunny…',
   send: 'ส่ง',
   chatIntro:
-    'สวัสดีค่ะ ดิฉันซาร่า ถามได้ทุกเรื่องเกี่ยวกับ VARA EdTech ทั้งบริการ ผลงาน ความร่วมมือกับมหาวิทยาลัย หรือราคานะคะ',
+    'สวัสดีครับ ผม Sunny ถามได้ทุกเรื่องเกี่ยวกับ VARA EdTech ทั้งบริการ ผลงาน ความร่วมมือกับมหาวิทยาลัย หรือราคานะครับ',
+  backToVoice: 'คุยด้วยเสียง',
+  backToVoiceHint: 'กลับไปสนทนาด้วยเสียง',
+  chatTyping: 'Sunny กำลังพิมพ์…',
 
   leadTitle: 'ให้เราติดต่อกลับ',
   leadSubtitle:
-    'ฝากข้อมูลไว้ ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมงค่ะ หรือจะให้ซาร่ารับข้อมูลระหว่างสนทนาก็ได้',
+    'ฝากข้อมูลไว้ ทีมงานจะติดต่อกลับภายใน 24 ชั่วโมงครับ หรือจะให้ Sunny รับข้อมูลระหว่างสนทนาก็ได้',
   leadName: 'ชื่อของท่าน',
   leadOrg: 'มหาวิทยาลัย / องค์กร',
   leadEmail: 'อีเมล',
@@ -250,9 +266,9 @@ const th: Copy = {
   leadError: 'เกิดข้อผิดพลาด กรุณาอีเมลมาที่ info@varaedtech.com หรือโทร +66 94 887 7955 ครับ',
   leadRequired: 'กรุณากรอกชื่อ และอีเมลหรือเบอร์โทรอย่างน้อยหนึ่งอย่างครับ',
 
-  leadCapturedToast: 'ซาร่าบันทึกข้อมูลของท่านให้ทีมงานแล้ว',
+  leadCapturedToast: 'Sunny บันทึกข้อมูลของท่านให้ทีมงานแล้ว',
 
-  capabilitiesTitle: 'ซาร่าคุยเรื่องอะไรได้บ้าง',
+  capabilitiesTitle: 'Sunny คุยเรื่องอะไรได้บ้าง',
   capabilities: [
     {
       title: 'บริการด้าน AI',
@@ -284,6 +300,8 @@ const th: Copy = {
 
   footerTagline: 'Revolutionizing learning',
   footerRights: 'บริษัท วรา เอดเทค จำกัด สงวนลิขสิทธิ์',
+  footerVisit: 'เยี่ยมชม varaedtech.com',
+  footerVisitShort: 'เว็บไซต์',
   privacyNote:
     'บทสนทนาอาจถูกบันทึกไว้เพื่อให้ทีมงานติดต่อกลับได้อย่างถูกต้อง กรุณาอย่าแจ้งรหัสผ่านหรือข้อมูลการชำระเงิน',
 

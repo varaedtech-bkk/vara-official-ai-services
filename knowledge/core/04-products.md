@@ -61,19 +61,11 @@ VARA can train a custom AI model for an organisation using its own handbooks, co
 # Other platforms in the portfolio
 
 ## TutExperts (tutexperts.com)
-A tutoring marketplace plus an institutional hiring platform, built by VARA EdTech.
+A live tutoring marketplace and school coverage platform **operated by VARA EdTech** (registration 0135564001868). TutExperts is the product brand; VARA owns the software. Full detail is in the TutExperts knowledge document.
 
-- **Two buyers, one vetted tutor pool:** marketplace learners book 1:1, group or live classes; institutions hire substitute/coverage tutors for their roster.
-- **Core institutional promise:** "Your teachers get sick. Your classes don't have to." Book a pre-vetted substitute in minutes.
-- **Live classroom:** LiveKit video with whiteboard, screen share, canvas tools and a low-bandwidth mode.
-- **Payments:** Stripe — onboarding fee, authorise-at-booking then capture-after-completion for lessons, and optional plan subscriptions. Tutor payouts via Stripe Connect, PayPal, Wise or Payoneer.
-- **Plans ladder:** Coverage (≈50 seats) → Roster Pro (≈500 seats, CSV roster import and exports) → Campus LMS (≈5,000 seats, campus classes/sections plus an assignments MVP). Seat caps can be overridden for pilots.
-- **Trust:** AI-assisted credential trust engine plus human admin approval, KYC document review, risk tiers, disputes and moderation.
-- **Localisation:** 19 locales in the product catalogues (EN, TH, VI, ID, PT, ES, AR, UR, ZH, JA, KO and more).
-- **Institution signup:** https://tutexperts.com/organization-signup (choose Institution)
-- **Pilot:** a 4–6 week institution pilot with 2–3 real coverage lessons booked during it.
+Students book verified tutors for 1:1, group, trial, live and instant lessons. Tutor Agencies list tutors (about a 5% supply share). Institutions hire coverage per lesson after an onboarding fee — no supply commission. Classroom: video, whiteboard, screen share, chat. Payments via Stripe (cards, Apple Pay / Google Pay where enabled, PromptPay and other regional methods). Tutor payouts via Stripe Connect, PayPal, Wise or Payoneer. Institution signup: https://tutexperts.com/organization-signup
 
-**Be honest about the limits (important):** Campus LMS is TutExperts-branded today — it is **not** white-label. Deep SIS integration is a later, trigger-based investment (a stub exists). Parent portals, full SIS replacement and net-30 invoicing are **not** current product claims. GDPR and Thailand PDPA readiness is documented, but internal maturity scores are not third-party certifications.
+Coverage roster has a soft limit around 50 learners. Roster Pro adds CSV, classes and attendance. Campus LMS adds assignments and grading and uses TutExperts branding. Parent portals and replacing a full campus student system are not available today.
 
 ## DiploExchange
 A verified peer-to-peer marketplace with roles, moderation, real-time alerts and a zero-commission model. A template for merchandise/ticket marketplaces.

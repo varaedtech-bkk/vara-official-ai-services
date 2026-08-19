@@ -14,7 +14,7 @@ Fully white-labelled: no third-party branding anywhere in the interface, and the
 |---|---|
 | **Voice** | Tap-to-talk particle orb, live captions, round call controls, voice-reactive animation |
 | **Theme** | Light and dark backgrounds, toggled top-right, remembered per browser |
-| **Language** | English only in the UI. The Thai assistant, prompt and knowledge layer are still in the repo — restoring the toggle is a small change |
+| **Language** | EN / TH toggle in the header. Each language starts its own voice assistant. Switching mid-call ends the conversation. |
 | **Knowledge** | 9 markdown documents covering the whole business, searched live by the assistant |
 | **Lead capture** | Vara takes name, organisation and contact details mid-conversation |
 | **Lead store** | Append-only JSONL on your own server, CSV export. Nothing leaves the box |
@@ -171,7 +171,7 @@ VAPI_TH_VOICE_ID=th-TH-NiwatNeural     # the only male Thai neural voice
 
 **Do not switch the Thai pipeline to Deepgram multi-language.** Thai is covered by Azure speech-to-text and Azure Neural TTS. Deepgram's multilingual model and the ElevenLabs turbo/flash v2.5 models do not support Thai. That's why the two languages run different pipelines instead of one auto-detecting assistant — the reason is recorded in a comment at the top of the config file.
 
-Both voices are male. Vara refers to himself as **ผม** and ends Thai sentences with **ครับ** — if you switch to a female voice you must flip those back to ผม→ดิฉัน and ครับ→ค่ะ/คะ across `vapi/system-prompt.th.md`, `knowledge/th/th-localization.md` and `src/lib/i18n.ts`, or the voice and the grammar will disagree.
+Both voices are male. Sunny refers to himself as **ผม** and ends Thai sentences with **ครับ** — if you switch to a female voice you must flip those back to ผม→ดิฉัน and ครับ→ค่ะ/คะ across `vapi/system-prompt.th.md`, `knowledge/th/th-localization.md` and `src/lib/i18n.ts`, or the voice and the grammar will disagree.
 
 The Thai voice has an OpenAI fallback; the English one does not, because the API rejects a `fallbackPlan` for its own voice provider — that provider runs managed auto-fallback internally.
 

@@ -14,6 +14,11 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  TH_FIRST_MESSAGE,
+  TH_PRONUNCIATION_LOCK,
+  TH_VOICE_CHUNK_PLAN,
+} from './pronunciation.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -21,18 +26,18 @@ const readPrompt = (lang) =>
   readFileSync(join(HERE, `system-prompt.${lang}.md`), 'utf8').trim();
 
 export const FIRST_MESSAGE = {
-  en: "Hi, this is Sara from VARA EdTech. How may I help you?",
-  th: 'สวัสดีค่ะ ดิฉันซาร่า จาก VARA EdTech ค่ะ ให้ดิฉันช่วยอะไรดีคะ',
+  en: "Hi, this is Sunny from VARA EdTech. How may I help you?",
+  th: TH_FIRST_MESSAGE,
 };
 
 const END_CALL_MESSAGE = {
   en: 'Thanks for your time. Someone from the VARA team will follow up. Have a great day.',
-  th: 'ขอบคุณมากค่ะ เดี๋ยวทีมงาน VARA ติดต่อกลับนะคะ ขอให้เป็นวันที่ดีค่ะ',
+  th: 'ขอบคุณมากครับ เดี๋ยวทีมงาน วา รา ติดต่อกลับนะครับ ขอให้เป็นวันที่ดีครับ',
 };
 
 const VOICEMAIL_SAFE_TIMEOUT = {
   en: 'Are you still there? I am happy to keep going whenever you are ready.',
-  th: 'ยังอยู่ไหมคะ ยินดีคุยต่อเมื่อท่านพร้อมนะคะ',
+  th: 'ยังอยู่ไหมครับ ยินดีคุยต่อเมื่อท่านพร้อมนะครับ',
 };
 
 /* ------------------------------------------------------------------ tools */
@@ -95,7 +100,7 @@ function buildTools(baseUrl, lang, secret) {
             email: {
               type: 'string',
               description:
-                'Visitor email, if given. Required whenever they asked to be emailed. Read it back to confirm, then pass the exact address. This triggers an automatic confirmation email from our platform.',
+                'Visitor email, if given. Required whenever they asked to be emailed. Read it back to confirm, then pass the exact address. Never pass a VARA company address such as info@varaedtech.com or anything @varaedtech.com — those are ours, not the visitor\'s.',
             },
             phone: { type: 'string', description: 'Phone or WhatsApp number, if given.' },
             interest: {
@@ -179,19 +184,19 @@ function buildVoice(lang, env = {}) {
   if (lang === 'th') {
     return {
       provider: 'azure',
-      // Premwadee is Azure's Thai female neural voice — Sara presents as female.
-      voiceId: env.VAPI_TH_VOICE_ID || 'th-TH-PremwadeeNeural',
-      speed: 0.97,
-      fallbackPlan: {
-        voices: [{ provider: 'openai', voiceId: 'echo' }],
-      },
+      // Niwat is Azure's Thai male neural voice — Sunny presents as male.
+      voiceId: env.VAPI_TH_VOICE_ID || 'th-TH-NiwatNeural',
+      speed: 0.8,
+      chunkPlan: TH_VOICE_CHUNK_PLAN,
+      // No English TTS fallback. Echo would greet and answer in English
+      // if Azure Thai was unavailable, which looks like the TH toggle failed.
     };
   }
   return {
     provider: 'vapi',
-    // Clara: female Vapi V2 voice. Sara is the spoken name (like Siri).
-    // Override with VAPI_EN_VOICE_ID (Savannah, Emma, Layla, Naina also work).
-    voiceId: env.VAPI_EN_VOICE_ID || 'Clara',
+    // Elliot: male Vapi V2 voice. Sunny is the spoken name (like Siri).
+    // Override with VAPI_EN_VOICE_ID (Kai, Sid also work).
+    voiceId: env.VAPI_EN_VOICE_ID || 'Elliot',
     version: 2,
     speed: 0.96,
     // No fallbackPlan here on purpose: the API rejects one for the Vapi voice
@@ -209,7 +214,7 @@ export function buildAssistant(lang, { baseUrl, env = {} }) {
   const url = baseUrl.replace(/\/+$/, '');
 
   return {
-    name: lang === 'th' ? 'Sara — VARA EdTech (TH)' : 'Sara — VARA EdTech (EN)',
+    name: lang === 'th' ? 'Sunny — VARA EdTech (TH)' : 'Sunny — VARA EdTech (EN)',
 
     firstMessage: FIRST_MESSAGE[lang],
     firstMessageMode: 'assistant-speaks-first',
@@ -224,7 +229,15 @@ export function buildAssistant(lang, { baseUrl, env = {} }) {
       // Shorter cap = fewer tokens to generate = audio starts sooner. The
       // prompt already asks for two or three sentences.
       maxTokens: 220,
-      messages: [{ role: 'system', content: readPrompt(lang) }],
+      messages: [
+        {
+          role: 'system',
+          content:
+            lang === 'th'
+              ? `${TH_PRONUNCIATION_LOCK}\n\n${readPrompt(lang)}`
+              : readPrompt(lang),
+        },
+      ],
       tools: buildTools(url, lang, env.VAPI_WEBHOOK_SECRET),
     },
 
@@ -307,7 +320,7 @@ export function buildAssistant(lang, { baseUrl, env = {} }) {
           {
             role: 'system',
             content:
-              'Summarise this conversation between a website visitor and Sara, the VARA EdTech assistant, in 3 sentences or fewer. Note who the visitor is, any email or phone they gave, what they wanted, and whether they asked to be contacted.',
+              'Summarise this conversation between a website visitor and Sunny, the VARA EdTech assistant, in 3 sentences or fewer. Note who the visitor is, any email or phone they gave, what they wanted, and whether they asked to be contacted.',
           },
           { role: 'user', content: 'Transcript:\n\n{{transcript}}' },
         ],

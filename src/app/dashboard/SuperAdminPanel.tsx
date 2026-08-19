@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { TenantConfigView } from './SettingsPanel';
+import LiveAgentAlerts from './LiveAgentAlerts';
 
 type AdminRow = {
   id: string;
@@ -26,7 +27,7 @@ export default function SuperAdminPanel({
   const [tenantForm, setTenantForm] = useState({
     companyName: '',
     slug: '',
-    assistantName: 'Sara',
+    assistantName: 'Sunny',
     paidUntil: '',
     notes: '',
   });
@@ -61,7 +62,7 @@ export default function SuperAdminPanel({
     setErr(!res.ok);
     setMsg(res.ok ? `Workspace ${data.tenant.slug} is live.` : data.error);
     if (res.ok) {
-      setTenantForm({ companyName: '', slug: '', assistantName: 'Sara', paidUntil: '', notes: '' });
+      setTenantForm({ companyName: '', slug: '', assistantName: 'Sunny', paidUntil: '', notes: '' });
       await refresh();
     }
   }
@@ -106,6 +107,8 @@ export default function SuperAdminPanel({
   return (
     <div>
       {msg && <div className={`dash-banner ${err ? 'dash-banner-err' : 'dash-banner-ok'}`}>{msg}</div>}
+
+      <LiveAgentAlerts />
 
       <div className="dash-card" style={{ padding: 22, marginBottom: 20 }}>
         <h2 style={{ margin: '0 0 6px', fontSize: 16 }}>New workspace</h2>

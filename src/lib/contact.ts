@@ -2,10 +2,17 @@
 
 const EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
 
-const INTERNAL = new Set([
-  'info@varaedtech.com',
-  'ceo@varaedtech.com',
-]);
+const COMPANY_DOMAINS = ['varaedtech.com'];
+
+/** True when the address belongs to VARA, not the visitor. */
+export function isCompanyEmail(raw?: string | null): boolean {
+  if (!raw) return false;
+  const email = raw.trim().toLowerCase();
+  const at = email.lastIndexOf('@');
+  if (at < 1) return false;
+  const domain = email.slice(at + 1);
+  return COMPANY_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`));
+}
 
 export function extractEmails(text?: string | null): string[] {
   if (!text) return [];
@@ -13,7 +20,7 @@ export function extractEmails(text?: string | null): string[] {
   const unique: string[] = [];
   for (const raw of found) {
     const email = raw.toLowerCase();
-    if (INTERNAL.has(email)) continue;
+    if (isCompanyEmail(email)) continue;
     if (email.endsWith('.png') || email.endsWith('.jpg')) continue;
     if (!unique.includes(email)) unique.push(email);
   }

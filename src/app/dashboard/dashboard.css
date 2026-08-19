@@ -330,6 +330,26 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
+.dash-field-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #fca5a5;
+}
+
+.dash-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dash-spin 0.7s linear infinite;
+}
+
+@keyframes dash-spin {
+  to { transform: rotate(360deg); }
+}
+
 .dash-head {
   display: flex;
   align-items: flex-end;

@@ -5,9 +5,11 @@ import { join } from 'node:path';
  * Dependency-free knowledge retrieval over the markdown corpus in /knowledge.
  *
  * The corpus is read from disk at first use and cached in module scope, so
- * editing a markdown file only needs a process restart (pm2 reload), not a
- * rebuild. See DEPLOY.md — the `knowledge/` directory must sit next to the
- * server process working directory.
+ * editing a markdown file only needs a process restart (`pm2 reload` or
+ * restarting `yarn dev`), not a rebuild. See DEPLOY.md — the `knowledge/`
+ * directory must sit next to the server process working directory.
+ * TutExperts product facts live in knowledge/core/10-tutexperts.md.
+ * Ownership: Sunjay Kumar, founder and CEO (varaedtech.com).
  */
 
 export type KbChunk = {
@@ -130,6 +132,8 @@ export function loadKnowledge(): KbChunk[] {
       if (!file.endsWith('.md')) continue;
       const raw = readFileSync(join(dir, file), 'utf8');
       const { meta, body } = parseFrontmatter(raw);
+      const searchable = (meta.searchable || 'true').toLowerCase();
+      if (searchable === 'false' || searchable === 'no') continue;
       chunks.push(...chunkDocument(body, meta, folder, file.replace(/\.md$/, '')));
     }
   }
@@ -251,6 +255,40 @@ function buildIndex() {
   return indexCache;
 }
 
+/**
+ * Common visitor phrasing → words that actually appear in the corpus.
+ * Applied after stop-word removal, so keys must already be stemmed forms
+ * where that matters (branches → branch).
+ */
+const QUERY_EXPAND: Record<string, string[]> = {
+  branch: ['office', 'location', 'headquarter', 'hq', 'subsidiary', 'sister'],
+  office: ['branch', 'location', 'headquarter', 'hq', 'address'],
+  location: ['office', 'branch', 'address', 'bangkok'],
+  subsidiary: ['sister', 'group', 'company'],
+  owner: ['founder', 'ceo', 'sunjay', 'kumar'],
+  founder: ['owner', 'ceo', 'sunjay'],
+  ceo: ['founder', 'owner', 'sunjay'],
+};
+
+function expandQueryTokens(tokens: string[], rawQuery: string): string[] {
+  const out = new Set(tokens);
+  for (const token of tokens) {
+    const extra = QUERY_EXPAND[token];
+    if (extra) for (const word of extra) out.add(word);
+  }
+  if (/สาขา|สำนักงาน|ตั้งอยู่ที่ไหน|บริษัทอยู่ที่ไหน/.test(rawQuery)) {
+    for (const word of tokenize('branch office bangkok group sister location address')) {
+      out.add(word);
+    }
+  }
+  if (/เจ้าของ|ผู้ก่อตั้ง|ซีอีโอ|who owns|who is the owner/.test(rawQuery.toLowerCase())) {
+    for (const word of tokenize('founder ceo owner sunjay kumar')) {
+      out.add(word);
+    }
+  }
+  return [...out];
+}
+
 function scoreChunk(entry: ChunkIndex, queryTokens: string[], idf: Map<string, number>): number {
   let score = 0;
   let matched = 0;
@@ -304,13 +342,16 @@ export function searchKnowledge(
 
   if (!chunks.length || !queryTokens.length) return [];
 
+  const expanded = expandQueryTokens(queryTokens, query);
+
   const hits: KbHit[] = [];
   for (let i = 0; i < chunks.length; i += 1) {
     const chunk = chunks[i];
-    let score = scoreChunk(index[i], queryTokens, idf);
+    if (lang === 'en' && chunk.lang === 'th') continue;
+    let score = scoreChunk(index[i], expanded, idf);
     if (score <= 0) continue;
     // Nudge the Thai localisation layer up when answering in Thai.
-    if (lang === 'th' && chunk.lang === 'th') score *= 1.25;
+    if (lang === 'th' && chunk.lang === 'th') score *= 3;
     hits.push({ ...chunk, score });
   }
 

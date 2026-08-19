@@ -8,6 +8,8 @@ import {
   checkWebhookSecret,
 } from '@/lib/vapi-tool';
 import { sendFollowUpEmail } from '@/lib/email';
+import { isCompanyEmail } from '@/lib/contact';
+import { notifyLiveAgentStaff } from '@/lib/live-agent';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,11 +21,18 @@ const str = (value: unknown): string | undefined =>
 function confirmation(language: 'en' | 'th', requestType?: string, channel?: string): string {
   const wants = requestType === 'proposal' || requestType === 'quote';
   const via = channel && channel !== 'any' ? channel : undefined;
+  const live = requestType === 'live-agent' || requestType === 'callback' || requestType === 'live_agent';
 
   if (language === 'th') {
+    if (live) {
+      return 'ถ้ายังไม่มีอีเมลหรือเบอร์ ห้ามสัญญาว่าจะโทรกลับ ให้ขอชื่อกับอีเมลหรือเบอร์ก่อน ห้ามบอกว่าต่อสายในแชทนี้ เมื่อมีช่องทางติดต่อแล้ว บอกว่าทีมจะอีเมลหรือโทรกลับโดยเร็ว หากเร่งด่วนให้ WhatsApp +66 94 887 7955';
+    }
     return wants
       ? `บันทึกแล้ว ให้ยืนยันว่าได้ส่งให้ทีมงานแล้ว และทีมจะส่ง${requestType === 'quote' ? 'ใบเสนอราคา' : 'ข้อเสนอ'}ไปทาง${via ? ' ' + via : 'ช่องทางที่แจ้งไว้'} ภายใน 24 ชั่วโมง ห้ามบอกว่าคุณส่งเอง`
       : 'บันทึกแล้ว ให้ยืนยันกับผู้สนทนาอย่างอบอุ่นว่าได้ส่งข้อมูลให้ทีมงานแล้ว และจะมีคนติดต่อกลับภายใน 24 ชั่วโมง';
+  }
+  if (live) {
+    return 'If they have not given an email or phone, do not promise a callback — ask for name and email or phone first. Do not say you connected a live agent. Once you have contact: a teammate will email or call back ASAP; urgent WhatsApp +66 94 887 7955.';
   }
   return wants
     ? `Saved. A confirmation email is being sent to their address now. Confirm warmly that they will get a short confirmation from VARA EdTech shortly, and that the team will send the ${requestType} ${via ? 'by ' + via : ''} within 24 hours. Do not say you personally sent the proposal.`
@@ -61,6 +70,17 @@ export async function POST(req: NextRequest) {
     const results = toolCalls.map((call) => {
       const a = call.args;
       const language = str(a.language) === 'th' ? 'th' : 'en';
+      const email = str(a.email);
+
+      if (isCompanyEmail(email)) {
+        return {
+          toolCallId: call.id,
+          result:
+            language === 'th'
+              ? 'นั่นเป็นอีเมลของบริษัท VARA EdTech ไม่ใช่ของผู้สนทนา ห้ามบันทึก บอกสุภาพว่า info@varaedtech.com เป็นอีเมลของเรา แล้วขออีเมลส่วนตัวหรืออีเมลที่ทำงานของท่านแทน'
+              : "That is a VARA EdTech company address, not the visitor's. Do not save it. Tell them politely that this is OUR email (for example info@varaedtech.com), and ask for THEIR personal or work email instead.",
+        };
+      }
 
       const lead = saveLead({
         source: 'voice',
@@ -71,7 +91,7 @@ export async function POST(req: NextRequest) {
         name: str(a.name),
         organization: str(a.organization),
         role: str(a.role),
-        email: str(a.email),
+        email,
         phone: str(a.phone),
         interest: str(a.interest),
         requestType: str(a.requestType),
@@ -87,8 +107,15 @@ export async function POST(req: NextRequest) {
           `via="${lead.preferredContact ?? '-'}" interest="${lead.interest ?? '-'}"`
       );
 
-      // Fire-and-forget — email failure must not delay Sara's spoken reply.
-      if (lead.email) void sendFollowUpEmail(lead);
+      // Fire-and-forget — email failure must not delay Sunny's spoken reply.
+      if (lead.requestType === 'live-agent' || lead.requestType === 'live_agent') {
+        void notifyLiveAgentStaff(
+          lead,
+          str(a.notes) || str(a.interest) || 'Voice visitor asked for a live agent',
+        );
+      } else if (lead.email) {
+        void sendFollowUpEmail(lead);
+      }
 
       return {
         toolCallId: call.id,
@@ -118,6 +145,12 @@ export async function POST(req: NextRequest) {
     return Response.json(
       { error: 'name and either email or phone are required' },
       { status: 400 }
+    );
+  }
+  if (email && isCompanyEmail(email)) {
+    return Response.json(
+      { error: 'that is a VARA EdTech company email, not a visitor address' },
+      { status: 400 },
     );
   }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {

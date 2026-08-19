@@ -1,10 +1,30 @@
 import type { NextRequest } from 'next/server';
 import { searchKnowledge, formatHitsForVoice, formatSkillsForVoice } from '@/lib/kb';
-import { parseToolCalls, toolResponse, checkWebhookSecret, extractCallMetadata } from '@/lib/vapi-tool';
+import {
+  parseToolCalls,
+  toolResponse,
+  checkWebhookSecret,
+  extractCallMetadata,
+  extractVoiceLang,
+} from '@/lib/vapi-tool';
 import { getTenant } from '@/lib/saas/store';
+import { TH_SPOKEN_COMPANY, TH_SPOKEN_FOUNDER, TH_TTS_REPLACEMENTS } from '@/lib/voice-pronunciation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+function speakInLang(notes: string, lang: 'en' | 'th'): string {
+  if (lang !== 'th') return notes;
+  let spoken = notes;
+  for (const item of TH_TTS_REPLACEMENTS) {
+    spoken = spoken.split(item.key).join(item.value);
+  }
+  spoken = spoken
+    .replace(/VARA\s*EdTech(?:\s+Co\.,?\s*Ltd\.?)?/gi, TH_SPOKEN_COMPANY)
+    .replace(/Sunjay\s+Kumar/gi, TH_SPOKEN_FOUNDER)
+    .replace(/Sanjay\s+Kumar/gi, TH_SPOKEN_FOUNDER);
+  return `[reply_language=th]\n${spoken}`;
+}
 
 /**
  * search_knowledge tool endpoint.
@@ -32,6 +52,7 @@ export async function POST(req: NextRequest) {
     const meta = extractCallMetadata(body);
     const slug = typeof meta.tenantSlug === 'string' ? meta.tenantSlug : '';
     const tenant = slug ? getTenant(slug) : undefined;
+    const lang = extractVoiceLang(body);
 
     const results = toolCalls.map((call) => {
       const query = typeof call.args.query === 'string' ? call.args.query : '';
@@ -43,12 +64,12 @@ export async function POST(req: NextRequest) {
       }
       if (tenant && tenant.slug !== 'vara' && tenant.skills.length) {
         const result = formatSkillsForVoice(tenant.skills, query);
-        console.log(`[kb] tenant=${tenant.slug} query="${query}" skills=${tenant.skills.length}`);
-        return { toolCallId: call.id, result };
+        console.log(`[kb] tenant=${tenant.slug} lang=${lang} query="${query}" skills=${tenant.skills.length}`);
+        return { toolCallId: call.id, result: speakInLang(result, lang) };
       }
-      const hits = searchKnowledge(query, { limit: 4 });
-      console.log(`[kb] tool query="${query}" hits=${hits.length}`);
-      return { toolCallId: call.id, result: formatHitsForVoice(hits) };
+      const hits = searchKnowledge(query, { limit: 4, lang });
+      console.log(`[kb] tool lang=${lang} query="${query}" hits=${hits.length}`);
+      return { toolCallId: call.id, result: speakInLang(formatHitsForVoice(hits), lang) };
     });
 
     return Response.json(toolResponse(results));

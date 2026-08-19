@@ -5,9 +5,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://varaedtech.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Sara — VARA EdTech AI Assistant',
+  title: 'Sunny — VARA EdTech AI Assistant',
   description:
-    'Talk to Sara, the live AI assistant from VARA EdTech. Ask about our AI services, VR and AR work, and university partnerships.',
+    'Talk to Sunny, the live AI assistant from VARA EdTech. Ask about our AI services, VR and AR work, and university partnerships.',
   applicationName: 'VARA EdTech AI Assistant',
   authors: [{ name: 'VARA EdTech Co., Ltd.', url: 'https://varaedtech.com' }],
   keywords: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     siteName: 'VARA EdTech',
-    title: 'Sara — VARA EdTech AI Assistant',
+    title: 'Sunny — VARA EdTech AI Assistant',
     description:
       'A live, bilingual AI assistant that knows VARA EdTech inside out. Speak to it now.',
     url: SITE_URL,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sara — VARA EdTech AI Assistant',
+    title: 'Sunny — VARA EdTech AI Assistant',
     description: 'A live, bilingual AI assistant that knows VARA EdTech inside out.',
   },
   robots: { index: true, follow: true },

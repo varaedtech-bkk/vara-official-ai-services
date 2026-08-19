@@ -14,6 +14,7 @@ tags: [clients, partners, mou, proof, portfolio, references, case study, forbes,
 - **BKK Law Firm**
 
 ## Live client work worldwide
+Named live clients include Diolog in Australia, Husverket in Sweden, myfirstdiamond in France, Mingtai, and a Bangkok law firm. Australia is live delivery; it is extra to the published 13-country served list (see the company document). Do not invent extra client names.
 | Client | Country | What it is |
 |---|---|---|
 | Diolog | Australia | Two-way communication platform; featured in Forbes Australia |

@@ -116,7 +116,7 @@ export function buildEmailBody(
 ): { subject: string; text: string; html: string } {
   const name = lead.name?.trim() || 'there';
   const company = brand?.companyName?.trim() || 'VARA EdTech';
-  const assistant = brand?.assistantName?.trim() || 'Sara';
+  const assistant = brand?.assistantName?.trim() || 'Sunny';
   const ask = extras?.ask || inferClientAsk(lead.summary, lead.interest, lead.topic);
   const fromEmail = displayEmailAddress(brand?.fromEmail);
   const phone = brand?.phone || '+66 94 887 7955';

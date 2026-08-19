@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Produces .next/standalone so the app can run on a VPS behind Nginx via PM2
-  // without needing node_modules on the server.
-  output: 'standalone',
+  // Standalone output is for `next build` / PM2. Leaving it on during
+  // `next dev` mixes production webpack chunks into .next and surfaces as
+  // MODULE_NOT_FOUND / "Cannot read properties of undefined (reading 'call')".
+  ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
   reactStrictMode: true,
   poweredByHeader: false,
+  serverExternalPackages: ['@vapi-ai/web'],
   async headers() {
     return [
       {

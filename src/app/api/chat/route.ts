@@ -1,103 +1,71 @@
 import type { NextRequest } from 'next/server';
-import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { searchKnowledge } from '@/lib/kb';
+import { searchKnowledge, type KbHit } from '@/lib/kb';
+import { isInternalSentence, publicFollowUp, publicSentences, smallTalkReply } from '@/lib/chat-public';
+import { handleLiveAgentRequest, hasReachableContact, isLiveAgentContactAsk, isLiveAgentRequest } from '@/lib/live-agent';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * Text fallback for the voice assistant.
- *
- * Same persona, same knowledge — useful in a noisy room, on a bad mic, or when
- * someone would simply rather read. Retrieval-augmented: we search the local
- * knowledge base for the visitor's message and hand the top passages to Claude
- * as grounding, so no tool round-trip is needed.
- *
- * If ANTHROPIC_API_KEY is absent the endpoint still answers, using the
- * knowledge base directly. Degraded, but never dead.
+ * Text chat with Sunny. Answers are short public summaries of the knowledge
+ * files. Staff notes and internal wording are stripped before reply.
  */
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
 const MAX_HISTORY = 12;
 
-const TEXT_MODE_NOTE = {
-  en: `
----
-# Text mode
+const IDENTITY_QUERY =
+  /\b(who are you|what is vara|what does vara do|tell me about (the )?company|about vara)\b|วาราคือใคร|บริษัทอะไร|วาราทำอะไร/i;
 
-You are answering in a chat box rather than out loud. Adjust:
-- You may use short paragraphs and at most one short list when it genuinely helps.
-- Still keep answers tight — four sentences or so, unless asked for detail.
-- You may write email addresses, phone numbers and URLs normally.
-- You have no tools here. Use the reference passages below. If they don't cover it, say you'd rather have a specialist confirm it, and invite them to leave their details in the form on this page.
-`,
-  th: `
----
-# โหมดข้อความ
+const OWNER_QUERY =
+  /\b(owner|owns|founder|ceo|director|shareholder|who (runs|leads|founded))\b|ผู้ก่อตั้ง|ซีอีโอ|เจ้าของ|กรรมการ/i;
 
-ตอนนี้ท่านกำลังตอบในกล่องแชท ไม่ใช่การพูด ให้ปรับดังนี้
-- ใช้ย่อหน้าสั้นๆ ได้ และใช้รายการสั้นๆ ได้ไม่เกินหนึ่งชุดเมื่อจำเป็นจริงๆ
-- ยังคงตอบกระชับ ประมาณสี่ประโยค เว้นแต่ถูกขอรายละเอียด
-- เขียนอีเมล เบอร์โทร และลิงก์แบบปกติได้
-- โหมดนี้ไม่มีเครื่องมือ ให้ใช้ข้อมูลอ้างอิงด้านล่าง หากไม่ครอบคลุม ให้บอกว่าอยากให้ผู้เชี่ยวชาญยืนยัน และเชิญให้กรอกแบบฟอร์มบนหน้านี้
-`,
-};
+function pickHits(query: string, lang: 'en' | 'th'): KbHit[] {
+  const hits = searchKnowledge(query, { limit: 8, lang }).filter(
+    (h) => !isInternalSentence(h.text.slice(0, 200)),
+  );
+  if (!hits.length) return [];
 
-let promptCache: Record<string, string> = {};
-
-function loadSystemPrompt(lang: 'en' | 'th'): string {
-  if (promptCache[lang]) return promptCache[lang];
-
-  const candidates = [
-    join(process.cwd(), 'vapi', `system-prompt.${lang}.md`),
-    join(process.cwd(), '..', 'vapi', `system-prompt.${lang}.md`),
-  ];
-
-  for (const path of candidates) {
-    if (existsSync(path)) {
-      promptCache[lang] = readFileSync(path, 'utf8').trim();
-      return promptCache[lang];
-    }
+  if (OWNER_QUERY.test(query)) {
+    const owner = hits.find((h) =>
+      /owns|owner|founder|ceo|ผู้ก่อตั้ง|เจ้าของ/i.test(h.heading),
+    );
+    if (owner) return [owner];
   }
 
-  // Minimal safety net if the prompt files were not deployed alongside the app.
-  promptCache[lang] =
-    lang === 'th'
-      ? 'คุณคือซาร่า ผู้ช่วย AI ของ VARA EdTech บริษัทเทคโนโลยี AI และ VR/AR ในกรุงเทพฯ ตอบสั้น สุภาพ ลงท้ายด้วยค่ะ ห้ามแต่งข้อมูล'
-      : 'You are Sara, the AI assistant for VARA EdTech, an AI and VR/AR company in Bangkok. Answer briefly and warmly. Never invent facts.';
-  return promptCache[lang];
-}
-
-function groundingBlock(query: string, lang: 'en' | 'th'): string {
-  const hits = searchKnowledge(query, { limit: 6, lang });
-  if (!hits.length) {
-    return '\n\n# Reference passages\n\n(No matching passages found in the VARA knowledge base for this question.)';
+  const identityAsked = IDENTITY_QUERY.test(query) && !OWNER_QUERY.test(query);
+  if (identityAsked) {
+    const identity = hits.find((h) => /what vara edtech is|วาราคือใคร/i.test(h.heading));
+    if (identity) return [identity];
   }
-  const body = hits
-    .map((hit) => `### ${hit.docTitle} — ${hit.heading}\n${hit.text.trim()}`)
-    .join('\n\n');
-  return `\n\n# Reference passages (from VARA's knowledge base — treat as authoritative)\n\n${body}`;
+
+  if (lang === 'th') {
+    const thai = hits.find(
+      (h) => h.lang === 'th' || /[\u0E00-\u0E7F]/.test(h.text),
+    );
+    if (thai) return [thai];
+  }
+
+  return [hits[0]];
 }
 
-/** No API key: answer straight from the knowledge base. */
-function offlineAnswer(query: string, lang: 'en' | 'th') {
-  const hits = searchKnowledge(query, { limit: 3, lang });
-
+function chatAnswer(query: string, lang: 'en' | 'th'): string {
+  const hits = pickHits(query, lang);
   if (!hits.length) {
     return lang === 'th'
-      ? 'ขออภัยค่ะ ตรงนี้ดิฉันยังไม่มีข้อมูลที่ชัดเจนพอ รบกวนฝากชื่อและช่องทางติดต่อไว้ในแบบฟอร์มด้านล่าง ทีมงานจะตอบให้ครบถ้วนภายใน 24 ชั่วโมงค่ะ'
-      : "I don't have a clear enough answer on that one. If you leave your details in the form below, the team will come back to you properly within 24 hours.";
+      ? 'ตรงนี้ผมยังไม่มีคำตอบที่ชัดเจนพอครับ ฝากชื่อกับอีเมลหรือเบอร์ไว้ได้ ทีมงานจะติดต่อภายใน 24 ชั่วโมงครับ'
+      : "I don't have a clear enough answer on that one. Leave a name and email or phone and the team will follow up within 24 hours.";
   }
 
-  const intro =
-    lang === 'th'
-      ? 'จากข้อมูลของ VARA EdTech ค่ะ\n\n'
-      : "Here's what VARA's own material says:\n\n";
+  const primary = publicSentences(hits[0].text, 420, 3);
+  if (!primary) {
+    return lang === 'th'
+      ? 'ตรงนี้ผมยังไม่มีคำตอบที่ชัดเจนพอครับ ฝากชื่อกับอีเมลหรือเบอร์ไว้ได้ ทีมงานจะติดต่อภายใน 24 ชั่วโมงครับ'
+      : "I don't have a clear enough answer on that one. Leave a name and email or phone and the team will follow up within 24 hours.";
+  }
 
-  return intro + hits.map((hit) => `**${hit.heading}**\n${hit.text.trim()}`).join('\n\n');
+  return `${primary}\n\n${publicFollowUp(lang)}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -117,62 +85,38 @@ export async function POST(req: NextRequest) {
         !!m &&
         (m.role === 'user' || m.role === 'assistant') &&
         typeof m.content === 'string' &&
-        m.content.trim().length > 0
+        m.content.trim().length > 0,
     )
     .slice(-MAX_HISTORY)
     .map((m) => ({ role: m.role, content: m.content.trim().slice(0, 4000) }));
+
+  while (messages.length && messages[0].role !== 'user') messages.shift();
 
   if (!messages.length || messages[messages.length - 1].role !== 'user') {
     return Response.json({ error: 'a user message is required' }, { status: 400 });
   }
 
   const question = messages[messages.length - 1].content;
-  const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
-
-  if (!apiKey) {
-    return Response.json({ reply: offlineAnswer(question, lang), degraded: true });
+  const chitChat = smallTalkReply(question, lang);
+  if (chitChat) {
+    return Response.json({ reply: chitChat });
   }
 
-  const system =
-    loadSystemPrompt(lang) + '\n' + TEXT_MODE_NOTE[lang] + groundingBlock(question, lang);
+  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+  const awaitingContact = Boolean(lastAssistant && isLiveAgentContactAsk(lastAssistant.content));
+  const wantsLiveAgent =
+    isLiveAgentRequest(question) || (awaitingContact && hasReachableContact(question));
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 700,
-        temperature: 0.4,
-        system,
-        messages,
-      }),
+  if (wantsLiveAgent) {
+    const historyText = messages.map((m) => m.content).join('\n');
+    const reply = await handleLiveAgentRequest({
+      lang,
+      question,
+      historyText,
+      source: 'chat',
     });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error(`[chat] anthropic ${res.status}: ${detail.slice(0, 400)}`);
-      return Response.json({ reply: offlineAnswer(question, lang), degraded: true });
-    }
-
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-    const reply = (data.content || [])
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text || '')
-      .join('')
-      .trim();
-
-    if (!reply) {
-      return Response.json({ reply: offlineAnswer(question, lang), degraded: true });
-    }
-
     return Response.json({ reply });
-  } catch (err) {
-    console.error('[chat] request failed', err);
-    return Response.json({ reply: offlineAnswer(question, lang), degraded: true });
   }
+
+  return Response.json({ reply: chatAnswer(question, lang) });
 }

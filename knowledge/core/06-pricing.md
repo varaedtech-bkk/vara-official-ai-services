@@ -7,9 +7,9 @@ tags: [pricing, price, cost, budget, packages, investment, baht, thb, quote, pro
 # Pricing and commercial model
 
 ## The rule for talking about price
-VARA gives **indicative ranges** and then scopes a real quote after a free consultation. Never quote a firm price as final, never invent a number that is not in this document, and always offer a free evaluation as the next step.
+Prices depend on scope. VARA shares an honest range first, then confirms a real figure after a free consultation.
 
-Framing to use: *"It depends on scope, so let me give you the honest range — and then we scope a real number for you for free."*
+Staff notes: never quote a firm price as final, never invent a number that is not in this document. Framing: "It depends on scope, so let me give you the honest range — and then we scope a real number for you for free."
 
 ---
 

@@ -24,7 +24,7 @@ export async function GET(req: Request) {
         en: assistantEn || null,
         th: assistantTh || null,
       },
-      textChatEnabled: Boolean((process.env.ANTHROPIC_API_KEY || '').trim()),
+      textChatEnabled: true,
       configured: Boolean(publicKey && (assistantEn || assistantTh) && active),
       tenant: tenant ? { ...publicBrand(tenant), ...voiceVariableValues(tenant) } : null,
     },

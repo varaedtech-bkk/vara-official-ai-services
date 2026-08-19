@@ -84,7 +84,28 @@ export function extractCallId(body: unknown): string | undefined {
 export function extractCallMetadata(body: unknown): Record<string, unknown> {
   const message = asRecord(asRecord(body).message);
   const call = asRecord(message.call);
-  return asRecord(call.metadata);
+  const assistant = asRecord(message.assistant);
+  return {
+    ...asRecord(assistant.metadata),
+    ...asRecord(asRecord(call.assistant).metadata),
+    ...asRecord(call.metadata),
+  };
+}
+
+/** Which voice assistant this webhook belongs to. Defaults to English. */
+export function extractVoiceLang(body: unknown): 'en' | 'th' {
+  const meta = extractCallMetadata(body);
+  if (meta.language === 'th') return 'th';
+
+  const message = asRecord(asRecord(body).message);
+  const call = asRecord(message.call);
+  const assistant = asRecord(message.assistant);
+  const name = String(
+    assistant.name || asRecord(call.assistant).name || '',
+  );
+  if (/\bTH\b|ไทย|Thai/i.test(name)) return 'th';
+
+  return 'en';
 }
 
 /** The response shape Vapi expects back from a tool endpoint. */
