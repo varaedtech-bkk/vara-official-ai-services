@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+  /* Dark is the default; light overrides below. Every surface colour goes
+     through a variable so the theme switch is one attribute on <html>. */
+  --bg: #08070c;
+  --fg: #f5f5f7;
+  --fg-dim: rgba(245, 245, 247, 0.45);
+  --fg-faint: rgba(245, 245, 247, 0.3);
+  --grid: rgba(232, 64, 47, 0.075);
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='light'] {
+  --bg: #f4f3f6;
+  --fg: #16151a;
+  --fg-dim: rgba(22, 21, 26, 0.55);
+  --fg-faint: rgba(22, 21, 26, 0.38);
+  --grid: rgba(232, 64, 47, 0.12);
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-hover: rgba(0, 0, 0, 0.08);
+  --border: rgba(0, 0, 0, 0.14);
+}
+
+@layer base {
+  html,
+  body {
+    /* Single-screen experience: nothing scrolls, ever. */
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Flat and matte on purpose — a gradient here would eat the contrast the
+       orb's glow depends on. */
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.45s ease, color 0.45s ease;
+  }
+
+  ::selection {
+    @apply bg-vara-red text-white;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 4px rgba(232, 64, 47, 0.7);
+  }
+}
+
+@layer components {
+  /* Round, tactile call controls — the shape people already associate with
+     picking up and hanging up a call. */
+  .call-btn {
+    @apply inline-flex h-14 w-14 items-center justify-center rounded-full
+           transition-all duration-200 active:scale-95;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fg);
+  }
+  .call-btn:hover {
+    background: var(--surface-hover);
+  }
+
+  .call-btn-active {
+    background: #e8402f;
+    border-color: transparent;
+    color: #fff;
+  }
+  .call-btn-active:hover {
+    background: #ff5a47;
+  }
+
+  .call-btn-end {
+    @apply inline-flex h-16 w-16 items-center justify-center rounded-full
+           text-white transition-all duration-200 active:scale-95;
+    background: #e8402f;
+    border: none;
+    box-shadow: 0 8px 28px rgba(232, 64, 47, 0.4);
+  }
+  .call-btn-end:hover {
+    background: #ff5a47;
+    box-shadow: 0 10px 34px rgba(232, 64, 47, 0.55);
+  }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full
+           transition-colors duration-200;
+    color: var(--fg-dim);
+  }
+  .icon-btn:hover {
+    color: var(--fg);
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

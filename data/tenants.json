@@ -1,0 +1,31 @@
+[
+  {
+    "id": "vara",
+    "slug": "vara",
+    "companyName": "VARA EdTech",
+    "assistantName": "Sara",
+    "website": "https://varaedtech.com",
+    "logoUrl": "/brand/vara-logo.png",
+    "status": "active",
+    "notes": "Platform owner tenant. Manual subscription — always active.",
+    "skills": [
+      {
+        "id": "ai-services",
+        "title": "Our AI services",
+        "body": "Answer Engine Optimization, voice assistants, chatbots, automation, analytics and custom private AI models."
+      },
+      {
+        "id": "platforms",
+        "title": "What we have already built",
+        "body": "Four flagship platforms: a real-time AI engine, Estimaro, RedLine, and private AI models trained on your content."
+      },
+      {
+        "id": "universities",
+        "title": "University partnerships",
+        "body": "Nine campus ideas, AI workshops and faculty training, plus a pilot-first path."
+      }
+    ],
+    "createdAt": "2026-08-19T10:33:10.776Z",
+    "updatedAt": "2026-08-19T10:33:10.776Z"
+  }
+]
